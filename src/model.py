@@ -99,14 +99,14 @@ class SerialHandler:
     """
     Interface for serial operations
     """
-    def __init__(self):
+    def __init__(self, serial_port):
         self.buffer = bytearray()  # Buffer to store serial frame
         self.buffer_full = False  # Flag to indicate if buffer has a full frame
         self.looking_for_start = (
             True  # Flag to indicate if we are awaiting frame start (DLE STX)
         )
         self.ser = serial.Serial(
-            port="/dev/serial0",
+            port=serial_port,
             baudrate=19200,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_TWO,
@@ -152,10 +152,10 @@ class SocketHandler:
     Interface for socket operations
     """
     
-    def __init__(self):
+    def __init__(self, socket_ip, socket_port):
         """Connects via a RS-485 to Ethernet adapter."""
-        self._host = "10.155.1.21"
-        self._port = 8899
+        self._host = socket_ip
+        self._port = int(socket_port)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self._host, self._port))
         self.socket.settimeout(1000)

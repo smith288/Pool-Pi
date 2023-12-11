@@ -1,0 +1,13 @@
+[Unit]
+Description=Pool-Pi Service
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/python3 /home/ubuntu/Pool-Pi/src/pool-pi.py 10.155.1.21 8899
+WorkingDirectory=/home/ubuntu/Pool-Pi
+User=ubuntu
+Environment=FLASK_CONFIG=production
+
+[Install]
+WantedBy=multi-user.target

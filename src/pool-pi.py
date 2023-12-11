@@ -7,13 +7,13 @@ from parsing import *
 from os import makedirs
 from os.path import exists
 import logging
+import sys
 from logging.handlers import TimedRotatingFileHandler
 
 socketio = SocketIO(message_queue="redis://127.0.0.1:6379")
 r = redis.Redis(charset="utf-8", decode_responses=True)
 pubsub = r.pubsub()
 pubsub.subscribe("inbox")
-
 
 def readSerialBus(serialHandler):
     """
@@ -267,10 +267,14 @@ def sendModel(poolModel):
     return
 
 
-def serialBackendMain():
+def serialBackendMain(serial_port, socket_ip, socket_port):
     poolModel = PoolModel()
-    #serialHandler = SerialHandler()
-    serialHandler = SocketHandler()
+    
+    if serial_port:
+        serialHandler = SerialHandler(serial_port)
+    else:
+        serialHandler = SocketHandler(socket_ip, socket_port)
+    
     commandHandler = CommandHandler()
     while True:
         # Read Serial Bus
@@ -294,6 +298,28 @@ def serialBackendMain():
 
 
 if __name__ == "__main__":
+    
+    serial_port = None
+    socket_ip = None
+    socket_port = None
+
+    if len(sys.argv) == 2:
+        print('Connecting to {}...'.format(sys.argv[1]))
+        if sys.argv[1].startswith('/'):
+            serial_port = sys.argv[1]
+        else:
+            print('Incorrect serial port format. It should look something like /dev/ttyUSB0 or /dev/SERIAL0')
+            quit()
+        serial_port = sys.argv[1]
+    elif len(sys.argv) == 3:
+        print('Connecting to {}:{}...'.format(sys.argv[1], sys.argv[2]))
+        socket_ip = sys.argv[1]
+        socket_port = sys.argv[2]
+    else:
+        print('Usage: pool-pi [host] [port]')
+        print('           [serial port]')
+        quit()
+       
     # Create log file directory if not already existing
     if not exists("logs"):
         makedirs("logs")
@@ -312,4 +338,4 @@ if __name__ == "__main__":
 
     thread_web = Thread(target=webBackendMain, daemon=True)
     thread_web.start()
-    serialBackendMain()
+    serialBackendMain(serial_port, socket_ip, socket_port)

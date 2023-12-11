@@ -82,6 +82,9 @@ buttons_menu = {
     "menu": b"\x02\x00\x00\x00",
 }
 
+# These button values were captured using swilson's script for each function.
+# They may be different for you.
+# https://github.com/swilson/aqualogic
 button_value = {
     "lights": b"\x10\x02\x00\x02\x00\x01\x00\x01\x00\x16\x10\x03",
     "filter": b"\x10\x02\x00\x02\x80\x00\x80\x00\x01\x14\x10\x03",
