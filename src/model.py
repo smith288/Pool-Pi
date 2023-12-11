@@ -1,5 +1,6 @@
 import json
 import serial
+import socket
 from gpiozero import LED
 import time
 from commands import *
@@ -45,6 +46,9 @@ class PoolModel:
         )
         self.timestamp = 0  # Unix time that the last LED message was received
         self.sending_message = False
+        # self.pooltemp = 0
+        # self.poolspeed = 0
+        # self.heater1 = False
 
     def updateParameter(self, parameter, data):
         attribute = getattr(self, parameter)
@@ -87,6 +91,7 @@ class PoolModel:
         jsonItems.pop("aux12")
         jsonItems.pop("aux13")
         jsonItems.pop("aux14")
+        jsonItems.pop("heater1")
         return json.dumps(jsonItems)
 
 
@@ -94,7 +99,6 @@ class SerialHandler:
     """
     Interface for serial operations
     """
-
     def __init__(self):
         self.buffer = bytearray()  # Buffer to store serial frame
         self.buffer_full = False  # Flag to indicate if buffer has a full frame
@@ -143,6 +147,68 @@ class SerialHandler:
         self.buffer_full = False
         return
 
+class SocketHandler:
+    """
+    Interface for socket operations
+    """
+    
+    def __init__(self):
+        """Connects via a RS-485 to Ethernet adapter."""
+        self._host = "10.155.1.21"
+        self._port = 8899
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((self._host, self._port))
+        self.socket.settimeout(1000)
+        self.buffer = bytearray()  # Buffer to store serial frame
+        self.buffer_full = False  # Flag to indicate if buffer has a full frame
+        self.looking_for_start = (
+            True  # Flag to indicate if we are awaiting frame start (DLE STX)
+        )
+        #self.send_enable = LED(17)  # GPIO 17 = Pin 11. High = sending, low = receiving.
+        #self.send_enable.off()  # Set to receive mode
+        self.ready_to_send = False  # Flag if we have a command to send and have checked to determine we need to send the command
+        
+    def send(self, msg):
+        """
+        Send a message via the serial interface.
+        Enable RS485 output, send message, disable RS485 output.
+        """
+        self.socket.send(msg)
+        
+    def read(self):
+        """
+        Accessor to return character in serial input
+        """
+        try:
+            data = self.socket.recv(1)
+            #logging.info(f"Received {data}")
+            return data
+        except socket.error:
+            logging.error("Socket error. Reconnecting.")
+            host = self.socket.getpeername()[0]
+            port = self.socket.getpeername()[1]
+            self.socket.close()
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((host, port))
+            data = self.socket.recv(1)
+            return data
+    
+
+    def in_waiting(self):
+        """
+        Accessor to return number of characters in serial input
+        """
+        return True
+
+    def reset(self):
+        """
+        Clear serial input and get ready to look for start
+        Called after a full message is parsed or when a message is invalid due to error
+        """
+        self.buffer.clear()
+        self.looking_for_start = True
+        self.buffer_full = False
+        return
 
 # Manages flow when sending commands
 class CommandHandler:
@@ -161,6 +227,11 @@ class CommandHandler:
             commandData = button_toggle[commandID]
         else:
             commandData = buttons_menu[commandID]
+        
+        # make a blank bytearray
+        xraOneByte = b'\x01'
+        xraZeroByte = b'\x00'
+
         # Form full frame to send from start tx, frame type, command, checksum, and end tx.
         partialFrame = (
             DLE + STX + FRAME_TYPE_LOCAL_TOGGLE + commandData + commandData
@@ -171,13 +242,16 @@ class CommandHandler:
             checksum += byte
         checksum = checksum.to_bytes(2, "big")
         partialFrame = partialFrame + checksum
+        logging.debug(f"Initiating send of {partialFrame[0:2]}")
         # If any x10 appears in frameType, data, or checksum, add additional x00
-        self.full_command = (
-            partialFrame[0:2]
-            + partialFrame[2:].replace(b"\x10", b"\x10\x00")
-            + DLE
-            + ETX
-        )
+        # self.full_command = (
+        #     partialFrame[0:2]
+        #     + partialFrame[2:].replace(b"\x10", b"\x10\x00")
+        #     + DLE
+        #     + ETX
+        # )
+        logging.debug(f"Value of button: {button_value[commandID]}")
+        self.full_command = button_value[commandID]
         self.keep_alive_count = 0
         self.sending_message = True
         self.parameter = commandID

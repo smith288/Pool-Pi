@@ -1,176 +1,259 @@
-<!DOCTYPE HTML>
-<html>
-<!-- This page offers an interface that emulates a PS-8 local display -->
-<!-- TODO add easy label swaps for AUX# -->
-<!-- TODO add toggles for unused switches-->
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-    <title>Pool-Pi</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta content="minimum-scale=1.0, width=device-width, maximum-scale=0.6667, user-scalable=no" name="viewport" />
+
+    <title>Pool Control</title>
+    <meta content="" name="description">
+    <meta content="" name="keywords">
+
+    <!-- Favicons -->
     <link rel="icon" href="../static/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="../static/apple-touch-icon.png">
-    <link rel="stylesheet" href="../static/styles.css">
-    <script src='../static/socket.io.js'></script>
-    <script src='../static/poolpi.js'></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="../static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="../static/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+    <link href="../static/assets/vendor/quill/quill.snow.css" rel="stylesheet">
+    <link href="../static/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
+    <link href="../static/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+    <link href="../static/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+
+    <!-- Template Main CSS File -->
+    <link href="../static/assets/css/style.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/76d6e95371.js" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
-    <div class="header">
-        <img src='../static/favicon.ico' width="35px">
-        <h1>Pool-Pi</h1>
+
+    <!-- ======= Header ======= -->
+    <header id="header" class="header fixed-top d-flex align-items-center">
+
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="./" class="logo d-flex align-items-center">
+                <img src="../static/favicon.ico" alt="">
+                <span class="d-lg-block">Pool Controller</span>
+            </a>
+            <!-- <i class="bi bi-list toggle-sidebar-btn"></i> -->
+        </div>
+        <!-- End Logo -->
+        <nav class="header-nav ms-auto">
+            <ul class="d-flex align-items-center">
+
+
+            </ul>
+        </nav>
+        <!-- End Icons Navigation -->
+
+    </header>
+    <!-- End Header -->
+
+    <main id="main" class="main">
+
+        <div class="pagetitle">
+            <h1>Dashboard</h1>
+        </div>
+        <!-- End Page Title -->
+
+        <section class="section dashboard">
+            <div class="row">
+
+                <!-- Left side columns -->
+                <div class="col-lg-8">
+                    <div class="row">
+
+                        <!-- Panel Display Card -->
+                        <div class="col-xxl-6 col-md-6">
+                            <div class="card info-card sales-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Panel Display <i class="bi bi-info-square-fill"></i></h5>
+
+                                    <div class="d-flex align-items-center">
+                                        <div class="ps-3 display">
+                                            <h6 id="display1">Waiting connection</h6>
+                                            <h6 id="display2">to AquaLogic</h6>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <!-- End Panel Display Card -->
+
+                        <!-- Controls Card -->
+                        <div class="col-xxl-6 col-xl-12">
+
+                            <div class="card info-card customers-card">
+
+                                <div class="card-body">
+                                    <h5 class="card-title">Toggles</h5>
+                                    <div class="d-flex align-items-center">
+                                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                            <i class="fa-solid fa-power-off" id="led-filter"></i>
+                                        </div>
+                                        <div class="ps-3">
+
+                                            <div class="checkbox-wrapper-51">
+                                                <input id="filter" type="checkbox" class="button-toggle">
+                                                <label class="toggle" for="filter">
+                                                  <span>
+                                                    <svg viewBox="0 0 10 10" height="10px" width="10px">
+                                                      <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139 2.790861,9 5,9 L5,9 C7.209139,9 9,7.209139 9,5 L9,5 C9,2.790861 7.209139,1 5,1 L5,9 L5,1 Z"></path>
+                                                    </svg>
+                                                  </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    &nbsp;
+                                    <div class="d-flex align-items-center">
+                                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                            <i class="fa-solid fa-hot-tub-person" id="led-poolspa"></i>
+                                        </div>
+                                        <div class="ps-3">
+
+                                            <label class="rocker rocker-small">
+                                                <input type="checkbox" id="pool_spa_spillover" value="poolspa" checked="checked" class="button-toggle">
+                                                <span class="switch-left">Pool</span>
+                                                <span class="switch-right">Spa</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    &nbsp;
+                                    <div class="d-flex align-items-center">
+                                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                            <i class="fa-solid fa-lightbulb" id="led-lights"></i>
+                                        </div>
+                                        <div class="ps-3">
+
+                                            <div class="checkbox-wrapper-51">
+                                                <input id="lights" type="checkbox" class="button-toggle">
+                                                <label class="toggle" for="lights">
+                                                  <span>
+                                                    <svg viewBox="0 0 10 10" height="10px" width="10px">
+                                                      <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139 2.790861,9 5,9 L5,9 C7.209139,9 9,7.209139 9,5 L9,5 C9,2.790861 7.209139,1 5,1 L5,9 L5,1 Z"></path>
+                                                    </svg>
+                                                  </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    &nbsp;
+                                    <div class="d-flex align-items-center">
+                                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                            <i class="fa-solid fa-fire" id="led-heater1"></i>
+                                        </div>
+                                        <div class="ps-3">
+
+                                            <div class="checkbox-wrapper-51">
+                                                <input id="heater1" type="checkbox" class="button-toggle">
+                                                <label class="toggle" for="heater1">
+                                                  <span>
+                                                    <svg viewBox="0 0 10 10" height="10px" width="10px">
+                                                      <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139 2.790861,9 5,9 L5,9 C7.209139,9 9,7.209139 9,5 L9,5 C9,2.790861 7.209139,1 5,1 L5,9 L5,1 Z"></path>
+                                                    </svg>
+                                                  </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    &nbsp;
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Controls Card -->
+
+                    </div>
+                </div>
+                <!-- End Left side columns -->
+
+                <!-- Right side columns -->
+                <div class="col-lg-4">
+
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Service</h5>
+
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                    <i class="fa-solid fa-triangle-exclamation" id="led-service"></i>
+                                </div>
+                                <div class="ps-3">
+
+                                    <div class="checkbox-wrapper-51">
+                                        <input id="service" type="checkbox">
+                                        <label class="toggle" for="service">
+                                          <span>
+                                            <svg viewBox="0 0 10 10" height="10px" width="10px">
+                                              <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139 2.790861,9 5,9 L5,9 C7.209139,9 9,7.209139 9,5 L9,5 C9,2.790861 7.209139,1 5,1 L5,9 L5,1 Z"></path>
+                                            </svg>
+                                          </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- End Recent Activity -->
+
+                </div>
+                <!-- End Right side columns -->
+
+            </div>
+        </section>
+
+    </main>
+    <!-- End #main -->
+
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+            <div class="toast-header">
+                <img src="../static/favicon.ico" class="rounded me-2" alt="..." height="10">
+                <strong class="me-auto">Pool Status</strong>
+                <small id="toasttime"></small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <div id="display3"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="panel">
-        <div class="overlay">
-            <div class="loading">
-                <img class="loading-image" src='../static/loading.gif' alt="Loading..." />
-            </div>
-        </div>
-        <div class="topPanel">
-            <div class="topLeft">
-                <div class="display">
-                    <div id="display1">AWAITING CONNECTION </div>
-                    <div id="display2"> FROM RASPBERRY PI </div>
-                </div>
-            </div>
-            <div class="topRight">
-                <div class="buttonContainer">
-                    <div class="buttonRow">
-                        <div id="plus" class="button-menu button-menu-oval noSelect">
-                            <p class="button-menu-text">+</p>
-                        </div>
-                    </div>
-                    <div class="buttonRow">
-                        <div id="left" class="button-menu button-menu-oval noSelect">
-                            <p class="button-menu-text">Left</p>
-                        </div>
-                        <div id="menu" class="button-menu button-menu-oval noSelect">
-                            <p class="button-menu-text">Menu</p>
-                        </div>
-                        <div id="right" class="button-menu button-menu-oval noSelect">
-                            <p class="button-menu-text">Right</p>
-                        </div>
-                    </div>
-                    <div class="buttonRow">
-                        <div id="minus" class="button-menu button-menu-oval noSelect">
-                            <p class="button-menu-text">-</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Vendor JS Files -->
+    <script src="../static/assets/vendor/apexcharts/apexcharts.min.js"></script>
+    <script src="../static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/assets/vendor/chart.js/chart.umd.js"></script>
+    <script src="../static/assets/vendor/echarts/echarts.min.js"></script>
+    <script src="../static/assets/vendor/quill/quill.min.js"></script>
+    <script src="../static/assets/vendor/simple-datatables/simple-datatables.js"></script>
+    <script src="../static/assets/vendor/tinymce/tinymce.min.js"></script>
+    <script src="../static/assets/vendor/php-email-form/validate.js"></script>
 
-        <div class="check-system-row">
-            <div>
-                <div>CHECK</div>
-                <div>SYSTEM</div>
-            </div>
-            <div id="checksystem" class="LED off" style="margin: 0px 10px;"></div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">SERVICE</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="service" class="button-toggle button-toggle-red button-toggle-red-oval
-            noSelect toggle-element"></div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div style="margin: 12px 0px;">
-                <div id="pool" class="button-row-container pool-spa-spillover-container">
-                    <div class="toggle-element toggle-text">POOL</div>
-                    <div id="led" class="LED off toggle-element"></div>
-                    <div class="button-spacer"></div>
-                </div>
-                <div id="spa" class="button-row-container pool-spa-spillover-container">
-                    <div class="toggle-element toggle-text">SPA</div>
-                    <div id="led" class="LED off toggle-element"></div>
-                    <div id="pool-spa-spillover" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                    noSelect toggle-element"></div>
-                </div>
-                <div id="spillover" class="button-row-container pool-spa-spillover-container">
-                    <div class="toggle-element toggle-text">SPILL</div>
-                    <div id="led" class="LED off toggle-element"></div>
-                    <div class="button-spacer"></div>
-                </div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">FILTER</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="filter" class="button-toggle button-toggle-blue button-toggle-blue-oval
-            noSelect toggle-element"></div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">LIGHTS</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="lights" class="button-toggle button-toggle-blue button-toggle-blue-oval
-            noSelect toggle-element"></div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">HEATER1</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="heater1" class="button-toggle button-toggle-blue button-toggle-blue-oval
-            noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">SPA LIGHT</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux1" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">WATERFALL</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux4" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">VALVE3</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="valve3" class="button-toggle button-toggle-blue button-toggle-blue-oval
-            noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">BLOWER</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux2" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">AUX5</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux5" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-        </div>
-        <div class="toggle-row">
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">VALVE4</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="valve4" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">CLEANER</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux3" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-            <div class="button-row-container">
-                <div class="toggle-element toggle-text">AUX6</div>
-                <div id="led" class="LED off toggle-element"></div>
-                <div id="aux6" class="button-toggle button-toggle-blue button-toggle-blue-oval
-                noSelect toggle-element"></div>
-            </div>
-        </div>
-    </div>
+    <!-- Include jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Template Main JS File -->
+    <script src="../static/assets/js/main.js"></script>
+
+    <script src='../static/socket.io.js'></script>
+    <script src='../static/poolpi.js'></script>
 </body>
 
 </html>

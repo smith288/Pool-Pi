@@ -25,7 +25,7 @@ def parseDisplay(data, poolModel):
         poolModel.display = data.decode("utf-8")
     except (UnicodeDecodeError, Exception) as e:
         logging.error(f"Error while decoding display update {data}: {e}")
-    logging.info(f"Display: {poolModel.display}")
+    # logging.info(f"Display: {poolModel.display}")
     poolModel.flag_data_changed = True
     return
 
@@ -57,9 +57,11 @@ def parseLEDs(data, poolModel):
         poolModel.version += 1
     # Logging
     if len(ledsBLINK) == 0:
-        logging.info(f"LED update: {ledsON} on.")
+        # logging.info(f"LED update: {ledsON} on.")
+        pass
     else:
-        logging.info(f"LED update: {ledsON} on and {ledsBLINK} blinking.")
+        # logging.info(f"LED update: {ledsON} on and {ledsBLINK} blinking.")
+        pass
     return
 
 

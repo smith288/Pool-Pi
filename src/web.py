@@ -1,8 +1,9 @@
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request, redirect, url_for, make_response
 from flask_socketio import SocketIO, emit
 from threading import Lock
 import uuid
 import logging
+import datetime
 
 # import eventlet
 import redis
@@ -24,19 +25,35 @@ def connect():
 
 @app.route("/")
 def index():
-    return render_template("index.html", async_mode=socketio.async_mode)
+    if request.cookies.get("authenticated") is None or request.cookies.get("authenticated") != "True":
+        print ("Not Authenticated")
+        # Do a 201 redirect to login page
+        return redirect(url_for("login"))
+    else:
+        print("authenticated")
+        return render_template("index.html")
 
 
-@app.route("/simple")
-def simple():
-    return render_template("simple.html", async_mode=socketio.async_mode)
-
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        # Set a cookie to identify the user
+        if request.form["username"] == "admin" and request.form["password"] == "admin":
+            response = make_response(redirect("/"))
+            expires = datetime.datetime.now() + datetime.timedelta(days=365)
+            response.set_cookie('authenticated', 'True', expires=expires)
+            return response
+        else:
+            return render_template("login.html?invalid=1")
+    else:  
+        return render_template("login.html")
 
 @socketio.event
 def webCommand(message):
     """
     Publish command from front end to redis channel.
     """
+    logging.info(f"Received command from web: {message}")
     r.publish("inbox", json.dumps(message))
 
 

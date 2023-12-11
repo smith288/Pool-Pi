@@ -25,6 +25,7 @@ def readSerialBus(serialHandler):
     When buffer is filled with a full frame and ready to be parseed,
     buffer_full is set to True to signal parseBuffer.
     """
+    
     if serialHandler.in_waiting() == 0:  # Check if we have serial data to read
         return
     if (
@@ -98,8 +99,10 @@ def parseBuffer(poolModel, serialHandler, commandHandler):
 
         # Use frame type to determine parsing function
         if frameType == FRAME_TYPE_KEEPALIVE:
+            
             # Check to see if we have a command to send
             if serialHandler.ready_to_send == True:
+                
                 if commandHandler.keep_alive_count == 1:
                     # If this is the second sequential keep alive frame, send command
                     serialHandler.send(commandHandler.full_command)
@@ -127,7 +130,8 @@ def parseBuffer(poolModel, serialHandler, commandHandler):
             # TODO add parsing and logging for local display commands
             # not sent by Pool-Pi (\x00\x02)
             else:
-                logging.info(f"Unkown update: {frameType}, {data}")
+                # logging.info(f"Unkown update: {frameType}, {data}")
+                pass
         # Clear buffer and reset flags
         serialHandler.reset()
 
@@ -158,6 +162,9 @@ def checkCommand(poolModel, serialHandler, commandHandler):
             poolModel.sending_message = False
             poolModel.flag_data_changed = True
         else:
+            logging.debug(
+                f"Command not yet successful: {commandHandler.parameter} {commandHandler.target_state}"
+            )
             # New poolModel doesn't match, command not successful.
             if commandHandler.sendAttemptsRemain() == True:
                 commandHandler.last_model_timestamp_seen = time.time()
@@ -174,6 +181,7 @@ def getCommand(poolModel, serialHandler, commandHandler):
         return
     message = pubsub.get_message()
     if message and (message["type"] == "message"):
+        logging.info(f"Received command from web: {message}")
         messageData = json.loads(message["data"])
         # Extract command info
         commandID = messageData["id"]
@@ -184,8 +192,11 @@ def getCommand(poolModel, serialHandler, commandHandler):
                 f"Invalid command: Back end version is {poolModel.version} but front end version is {frontEndVersion}."
             )
 
+        if commandID == "pool-spa-spillover":
+            commandID = "pool"
+
         # Determine if command requires confirmation
-        if (commandID in button_toggle) or (commandID == "pool-spa-spillover"):
+        if (commandID in button_toggle) or (commandID == "pool"):
             commandConfirm = True
         elif commandID in buttons_menu:
             commandConfirm = False
@@ -209,9 +220,8 @@ def getCommand(poolModel, serialHandler, commandHandler):
 
             # Check we aren't in INIT state
             if poolModel.getParameterState(commandID) == "INIT":
-                logging.error(
-                    f"Invalid command: Target parameter {commandID} is in INIT state."
-                )
+                logging.error(f"Invalid command: Target parameter {commandID} is in INIT state.")
+
             # Determine next desired state
             currentState = poolModel.getParameterState(commandID)
             # Service tristate ON->BLINK->OFF
@@ -251,15 +261,16 @@ def sendModel(poolModel):
     """
     if poolModel.flag_data_changed == True:
         r.publish("outbox", poolModel.toJSON())
-        # socketio.emit("model", poolModel.toJSON())
-        logging.debug("Published model to outbox.")
+        socketio.emit("model", poolModel.toJSON())
+        #logging.debug("Published model to outbox.")
         poolModel.flag_data_changed = False
     return
 
 
 def serialBackendMain():
     poolModel = PoolModel()
-    serialHandler = SerialHandler()
+    #serialHandler = SerialHandler()
+    serialHandler = SocketHandler()
     commandHandler = CommandHandler()
     while True:
         # Read Serial Bus
@@ -296,7 +307,7 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(handler)
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.info("Started pool-pi.py")
 
     thread_web = Thread(target=webBackendMain, daemon=True)

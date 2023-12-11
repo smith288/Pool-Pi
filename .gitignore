@@ -27,3 +27,4 @@ coverage.xml
 venv/
 *.log
 *.Identifier
+src/logs/*
