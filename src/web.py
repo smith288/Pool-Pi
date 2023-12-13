@@ -17,7 +17,6 @@ socketio = SocketIO(app, async_mode=async_mode)
 
 r = redis.Redis(charset="utf-8", decode_responses=True)
 
-
 @socketio.event
 def connect():
     logging.info(f"Client connected.")
@@ -27,10 +26,12 @@ def connect():
 def index():
     if request.cookies.get("authenticated") is None or request.cookies.get("authenticated") != "True":
         print ("Not Authenticated")
+        session.is_authenticated = False
         # Do a 201 redirect to login page
         return redirect(url_for("login"))
     else:
         print("authenticated")
+        session.is_authenticated = True
         return render_template("index.html")
 
 
@@ -38,15 +39,35 @@ def index():
 def login():
     if request.method == "POST":
         # Set a cookie to identify the user
-        if request.form["username"] == "admin" and request.form["password"] == "admin":
+        if "username" in request.form and "password" in request.form and request.form["username"] == "admin" and request.form["password"] == "admin":
             response = make_response(redirect("/"))
             expires = datetime.datetime.now() + datetime.timedelta(days=365)
+            
+            if "remember" in request.form:
+                response.set_cookie('uname', request.form["username"], expires=expires)
+                response.set_cookie('remember', 'True', expires=expires)
+            else:
+                 response.set_cookie('uname', 'False', expires=0)
+                 response.set_cookie('remember', 'False', expires=0)
+
             response.set_cookie('authenticated', 'True', expires=expires)
             return response
         else:
             return render_template("login.html?invalid=1")
-    else:  
-        return render_template("login.html")
+    else:
+        if request.cookies.get("uname") is not None:
+            uname = request.cookies.get("uname")
+            remember = request.cookies.get("remember")
+        else:
+            uname = ""
+            remember = "False"
+        return render_template("login.html", uname=uname, remember=remember)
+
+@app.route("/logout")
+def logout():
+    response = make_response(redirect("/login"))
+    response.set_cookie('authenticated', '', expires=0)
+    return response
 
 @socketio.event
 def webCommand(message):
@@ -75,4 +96,4 @@ def checkOutbox():
 def webBackendMain():
     logging.info(f"Starting web backend.")
     socketio.start_background_task(checkOutbox)
-    socketio.run(app, host="0.0.0.0")
+    socketio.run(app, host="0.0.0.0", allow_unsafe_werkzeug=True)

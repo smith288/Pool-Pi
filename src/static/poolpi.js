@@ -19,7 +19,7 @@ $(document).ready(function() {
         $('#basicModal').modal('show');
 
         $('#display1').innerHTML = '   NO CONNECTION    ';
-        $('#display2').innerHTML = ' FROM RASPBERRY PI  ';
+        $('#display2').innerHTML = ' FROM AQUALOGIC  ';
     }
 
     // Timeout ID for disconnect timer
@@ -55,6 +55,7 @@ $(document).ready(function() {
         msgObj = JSON.parse(msg["data"]);
         $('#basicModal').modal('hide');
 
+        console.log('Model', msgObj['lights']);
         // Parse version
         modelVersion = msgObj['version'];
         delete msgObj['version'];
@@ -170,10 +171,10 @@ $(document).ready(function() {
 
     function setGlobals(modelVals) {
         try {
-            status_lights = msgObj['lights'].state == 'ON';
-            status_filter = msgObj['filter'].state == 'ON';
-            status_heater = msgObj['heater1'].state == 'ON';
-            status_pool_spa_spillover = msgObj['pool'].state == 'ON';
+            status_lights = modelVals['lights'].state == 'ON';
+            status_filter = modelVals['filter'].state == 'ON';
+            status_heater = modelVals['heater1'].state == 'ON';
+            status_pool_spa_spillover = modelVals['pool'].state == 'ON';
         } catch (err) {
 
         }
