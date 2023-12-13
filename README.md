@@ -28,6 +28,11 @@ Pool-Pi provides a web interface which emulates a local PS-8 display, allowing f
 ## Setup
 Project requirements and instructions can be found in [docs/SETUP.md](/docs/SETUP.md).
 
+## Running
+Once you have everything set up, you can run it like this: 
+python src/pool-pi.py 11.22.33.44 8811 (for sockets)
+pythin src/pool-pi.py /dev/ttyUSB0 (for serial - must be the correct serial port)
+
 ## Acknowledgements
 Thank you to other people who have put their own resources/solutions for solving this problem online, including [draythomp](http://www.desert-home.com/), [swilson](https://github.com/swilson/aqualogic), and Pete Tompkins.
 
