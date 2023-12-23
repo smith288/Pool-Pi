@@ -5,3 +5,4 @@ gpiozero==2.0
 simple-websocket==1.0.0
 redis==5.0.1
 RPi.GPIO==0.7.1
+paho-mqtt==1.6.0

@@ -1,9 +1,12 @@
 from flask import Flask, render_template, session, request, redirect, url_for, make_response
 from flask_socketio import SocketIO, emit
 from threading import Lock
+import threading
 import uuid
 import logging
 import datetime
+from mqtt import MQTTClient
+import os
 
 # import eventlet
 import redis
@@ -21,10 +24,15 @@ r = redis.Redis(charset="utf-8", decode_responses=True)
 def connect():
     logging.info(f"Client connected.")
 
+def is_authenticated():
+    if request.cookies.get("authenticated") is None or request.cookies.get("authenticated") != "True":
+        return False
+    else:
+        return True
 
 @app.route("/")
 def index():
-    if request.cookies.get("authenticated") is None or request.cookies.get("authenticated") != "True":
+    if is_authenticated() == False:
         print ("Not Authenticated")
         session.is_authenticated = False
         # Do a 201 redirect to login page
@@ -69,6 +77,20 @@ def logout():
     response.set_cookie('authenticated', '', expires=0)
     return response
 
+@app.route("/restart", methods=["GET"])
+def restart():
+    if is_authenticated() == False:
+        return redirect(url_for("login"))
+    else:
+        
+        # async call to 
+        timer = threading.Timer(2.0, delayed_restart)
+        timer.start()
+
+        # this is an api call, so just return a 200
+        response = make_response("", 200)
+        return response
+
 @socketio.event
 def webCommand(message):
     """
@@ -87,13 +109,22 @@ def checkOutbox():
     pubsub = r.pubsub()
     pubsub.subscribe("outbox")
     while True:
-        message = pubsub.get_message()
-        if message and (message["type"] == "message"):
-            socketio.emit("model", message)
-        socketio.sleep(0.01)
-
+        try:
+            message = pubsub.get_message()
+            if message and (message["type"] == "message"):
+                socketio.emit("model", message)
+            socketio.sleep(0.01)
+        except Exception as e:
+            print(f"Error: {e}")
+            logging.error(f"Lost connection: {e}")
+            socketio.sleep(5)  # Wait before trying to reconnect again
 
 def webBackendMain():
     logging.info(f"Starting web backend.")
     socketio.start_background_task(checkOutbox)
     socketio.run(app, host="0.0.0.0", allow_unsafe_werkzeug=True)
+
+def delayed_restart():
+    logging.info(f"Restarting...")
+    socketio.sleep(5)
+    os.system("sudo systemctl restart poolpi_ubuntu.service")

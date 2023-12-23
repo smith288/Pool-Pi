@@ -20,9 +20,17 @@
                                 <h5 class="card-title">Panel Display <i class="bi bi-info-square-fill"></i></h5>
 
                                 <div class="d-flex align-items-center">
-                                    <div class="ps-3 display">
+                                    <div class="ps-3 display pool_conn_status">
                                         <h6 id="display1">Waiting connection</h6>
                                         <h6 id="display2">to AquaLogic</h6>
+                                    </div>
+                                    <div class="ps-3 display pool_status d-none">
+                                        <div><b>Pool Temp</b>: <span id="status_pooltemp">0</span></div>
+                                        <div><b>Air Temp</b>: <span id="status_airtemp">0</span></div>
+                                        <div><b>Filter Speed</b>: <span id="status_filterspeed">0</span></div>
+                                        <div><b>Salt Level</b>: <span id="status_saltlevel">0</span></div>
+                                        <div><b>Pool Chlorinator</b>: <span id="status_poolchlorinator">0</span></div>
+                                        <div><b>Heater</b>: <span id="status_heater1">Off</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -145,14 +153,26 @@
                                 </div>
                             </div>
                         </div>
+                        &nbsp;
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center circle-on">
+                                <i class="fa-solid fa-server" id="led-heater1"></i>
+                            </div>
+                            <div class="ps-3">
 
+                                <div class="checkbox-wrapper-51">
+                                    <!-- Button called Restart that will restart the service -->
+                                    <button type="button" class="btn btn-primary" id="restart_service">Restart</button>
+                                </div>
+                            </div>
+                        </div>
+                        &nbsp;
                     </div>
+                    <!-- End Recent Activity -->
+
                 </div>
-                <!-- End Recent Activity -->
+                <!-- End Right side columns -->
 
             </div>
-            <!-- End Right side columns -->
-
-        </div>
     </section>
     {% endblock %}

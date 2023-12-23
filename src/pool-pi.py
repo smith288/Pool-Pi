@@ -9,11 +9,16 @@ from os.path import exists
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler
+import time
+import json
+from mqtt import MQTTClient
 
 socketio = SocketIO(message_queue="redis://127.0.0.1:6379")
 r = redis.Redis(charset="utf-8", decode_responses=True)
 pubsub = r.pubsub()
 pubsub.subscribe("inbox")
+mqttclient = None
+logs = False
 
 def readSerialBus(serialHandler):
     """
@@ -182,15 +187,18 @@ def getCommand(poolModel, serialHandler, commandHandler):
     message = pubsub.get_message()
     if message and (message["type"] == "message"):
         logging.info(f"Received command from web: {message}")
+        print(f"Received command from web: {message}")
         messageData = json.loads(message["data"])
         # Extract command info
         commandID = messageData["id"]
-        frontEndVersion = messageData["modelVersion"]
+        # check if MQTT is a property of the message and true
+        if "MQTT" in messageData and messageData["MQTT"] == True:
+            frontEndVersion = poolModel.version
+        else:
+            frontEndVersion = messageData["modelVersion"]
 
         if frontEndVersion != poolModel.version:
-            logging.error(
-                f"Invalid command: Back end version is {poolModel.version} but front end version is {frontEndVersion}."
-            )
+            logging.error(f"Invalid command: Back end version is {poolModel.version} but front end version is {frontEndVersion}.")
 
         if commandID == "pool-spa-spillover":
             commandID = "pool"
@@ -239,9 +247,7 @@ def getCommand(poolModel, serialHandler, commandHandler):
                 else:
                     desiredState = "ON"
 
-            logging.info(
-                f"Valid command: {commandID} {desiredState}, version {frontEndVersion}"
-            )
+            logging.info(f"Valid command: {commandID} {desiredState}, version {frontEndVersion}")
             # Push to command handler
             commandHandler.initiateSend(commandID, desiredState, commandConfirm)
             poolModel.sending_message = True
@@ -259,13 +265,48 @@ def sendModel(poolModel):
     """
     Check if we have new model for the front end. If so, send JSON data to redis.
     """
+
     if poolModel.flag_data_changed == True:
+
         r.publish("outbox", poolModel.toJSON())
         socketio.emit("model", poolModel.toJSON())
+
+        # Only send one message to MQTT broker per 5 seconds
+        if (time.time() - mqttclient.last_publish_time) > 5:
+            mqttclient.last_publish_time = time.time()
+            mqttclient.publish(poolModel.toJSON())
+            #logging.debug("Published model to MQTT broker.")
+        else:
+            #logging.debug("Not publishing to MQTT broker.")
+            pass
         #logging.debug("Published model to outbox.")
         poolModel.flag_data_changed = False
+
     return
 
+def mqttCallback(topic, msg):
+    """
+    Callback function for MQTT message handling.
+
+    Args:
+        topic (str): The topic on which the message was received.
+        msg (str): The message received.
+
+    Returns:
+        None
+    """
+    # Convert msg to dictionary
+    print(f"Received message on topic: {msg}")
+    msg_dict = json.loads(msg)
+
+    # Add new property
+    msg_dict['MQTT'] = True
+
+    # Convert dictionary back to string
+    msg = json.dumps(msg_dict)
+
+    print(f"Received message on topic {topic}: {msg}")
+    r.publish("inbox", msg)
 
 def serialBackendMain(serial_port, socket_ip, socket_port):
     poolModel = PoolModel()
@@ -321,21 +362,26 @@ if __name__ == "__main__":
         quit()
        
     # Create log file directory if not already existing
-    if not exists("logs"):
-        makedirs("logs")
-    formatter = logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    handler = TimedRotatingFileHandler(
-        "logs/pool-pi.log", when="midnight", backupCount=60
-    )
-    handler.suffix = "%Y-%m-%d_%H-%M-%S"
-    handler.setFormatter(formatter)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(handler)
+    if logs == True:
+        if not exists("logs"):
+            makedirs("logs")
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        handler = TimedRotatingFileHandler(
+            "logs/pool-pi.log", when="midnight", backupCount=60
+        )
+        handler.suffix = "%Y-%m-%d_%H-%M-%S"
+        handler.setFormatter(formatter)
+        logging.getLogger().handlers.clear()
+        logging.getLogger().addHandler(handler)
+        
     logging.getLogger().setLevel(logging.DEBUG)
     logging.info("Started pool-pi.py")
 
     thread_web = Thread(target=webBackendMain, daemon=True)
     thread_web.start()
+
+    mqttclient = MQTTClient(callback=mqttCallback)
+    mqttclient.run()
     serialBackendMain(serial_port, socket_ip, socket_port)

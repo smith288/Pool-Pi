@@ -267,6 +267,13 @@ h6 {
     font-weight: 400;
 }
 
+.pool_status>div {
+    font-size: 14px;
+    font-weight: 500;
+    color: #012970;
+    font-family: "Poppins", sans-serif;
+}
+
 .card-body {
     padding: 0 20px 20px 20px;
 }

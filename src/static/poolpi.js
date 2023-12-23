@@ -2,11 +2,27 @@ var status_filter = false;
 var status_pool_spa_spillover = false;
 var status_lights = false;
 var status_heater1 = false;
+var status_airtemp = 0;
+var status_pooltemp = 0;
+var status_poolchlorinator = 0;
+var status_heater1 = false;
+var status_saltlevel = 0;
+var status_filterspeed = 0;
 
 var toast;
 
 $(document).ready(function() {
 
+    $('#restart_service').click(function() {
+        if (confirm('Are you sure you would like to restart the service?')) {
+            $.get('/restart', function(data, status) {
+                console.log('Restarting');
+                setTimeout(function() {
+                    location.reload();
+                }, 5000);
+            });
+        }
+    });
     toast = bootstrap.Toast.getOrCreateInstance(document.querySelector('#liveToast'));
     // Connect to the Socket.IO server.
     // The connection URL has the following format, relative to the current page:
@@ -19,11 +35,12 @@ $(document).ready(function() {
         $('#basicModal').modal('show');
 
         $('#display1').innerHTML = '   NO CONNECTION    ';
-        $('#display2').innerHTML = ' FROM AQUALOGIC  ';
+        $('#display2').innerHTML = ' FROM HAYWARD  ';
     }
 
     // Timeout ID for disconnect timer
     var timeoutID;
+    var tryCount = 0;
 
     // Disconnect timer function to notify user if connection has been lost
     // Reset when the model update is received
@@ -55,7 +72,7 @@ $(document).ready(function() {
         msgObj = JSON.parse(msg["data"]);
         $('#basicModal').modal('hide');
 
-        console.log('Model', msgObj['lights']);
+        // console.log('Model', msg);
         // Parse version
         modelVersion = msgObj['version'];
         delete msgObj['version'];
@@ -64,6 +81,57 @@ $(document).ready(function() {
         len = msgObj['display_mask'].length;
         $('#display1').html('');
         $('#display2').html('');
+
+        $('.pool_status').removeClass('d-none');
+        $('.pool_conn_status').addClass('d-none');
+
+        var panel_display = String(msgObj['display']).trim();
+        console.log('panel_display', panel_display);
+        switch (true) {
+            case panel_display.indexOf('NO CONNECTION') > -1:
+                $('.pool_conn_status').removeClass('d-none');
+                $('.pool_status').addClass('d-none');
+                break;
+            case panel_display.indexOf('Pool Temp') > -1:
+                panel_display = panel_display.replace('Pool Temp', '');
+                status_pooltemp = panel_display.trim();
+                break;
+            case panel_display.indexOf('Air Temp') > -1:
+                panel_display = panel_display.replace('Air Temp', '');
+                status_airtemp = panel_display.trim();
+                break;
+            case panel_display.indexOf('Pool Chlorinator') > -1:
+                panel_display = panel_display.replace('Pool Chlorinator', '');
+                status_poolchlorinator = panel_display.trim();
+                break;
+            case panel_display.indexOf('Salt Level') > -1:
+                panel_display = panel_display.replace('Salt Level', '');
+                status_saltlevel = panel_display.trim();
+                break;
+            case panel_display.indexOf('Filter Speed') > -1:
+                panel_display = panel_display.replace('Filter Speed', '');
+                status_filterspeed = panel_display.trim();
+                break;
+            case panel_display.indexOf('Heater1') > -1:
+                panel_display = panel_display.replace('Heater1', '');
+                status_heater1 = panel_display.trim();
+                break;
+            default:
+                break;
+        }
+
+        // console.log('status_pooltemp', status_pooltemp);
+        // console.log('status_airtemp', status_airtemp);
+        // console.log('status_poolchlorinator', status_poolchlorinator);
+        // console.log('status_saltlevel', status_saltlevel);
+        // console.log('status_filterspeed', status_filterspeed);
+
+        $('#status_pooltemp').text(status_pooltemp);
+        $('#status_airtemp').text(status_airtemp);
+        $('#status_poolchlorinator').text(status_poolchlorinator);
+        $('#status_saltlevel').text(status_saltlevel);
+        $('#status_filterspeed').text(status_filterspeed);
+        $('#status_heater1').text(status_heater1);
 
         // Parse top row of display
         for (var i = 0; i < len / 2; ++i) {
@@ -171,9 +239,10 @@ $(document).ready(function() {
 
     function setGlobals(modelVals) {
         try {
+            console.log('Lights: ' + modelVals['lights'].state);
             status_lights = modelVals['lights'].state == 'ON';
             status_filter = modelVals['filter'].state == 'ON';
-            status_heater = modelVals['heater1'].state == 'ON';
+            status_heater1 = modelVals['heater1'].state == 'ON';
             status_pool_spa_spillover = modelVals['pool'].state == 'ON';
         } catch (err) {
 
@@ -187,6 +256,7 @@ $(document).ready(function() {
         toast.show();
 
         var checkInterval = setInterval(function() {
+            tryCount++;
             var dtNow = new Date();
             var dtDiff = dtNow - dtStart;
             // Set the text of $('#toasttime') to the elapsed time in seconds
@@ -197,6 +267,14 @@ $(document).ready(function() {
                 toast.hide();
                 clearInterval(checkInterval);
                 dtStart = null;
+            }
+            if (tryCount > 60) {
+                console.log('Failed to change state');
+                toast.hide();
+                alert('Failed to change state.  Try again.');
+                clearInterval(checkInterval);
+                dtStart = null;
+                tryCount = 0;
             }
         }, 1000);
     }
